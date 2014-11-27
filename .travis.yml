@@ -1,68 +1,13 @@
-language: "python"
-
-python:
-  - "pypy"
-  - "2.7"
+language: python
 
 env:
-  # Test various kinds of Nevow installations.  See below for the precise
-  # meaning of each mode.
-  - MODE=inplace
-  - MODE=source
-  - MODE=sdist
-  - MODE=wheel
+  - TOX_ENV=py27
+  - TOX_ENV=pypy
+  - TOX_ENV=doc
 
 install:
-  - "python setup.py --version"
-  - |
-    if [ "${MODE}" == "wheel" ]; then
-        # Build and install a wheel of Nevow.
-        pip install wheel
-
-        # Explicitly select the py27 tag because it makes the filename more predictable.
-        python setup.py bdist_wheel --python-tag py27
-
-        # Install whatever was just built.  The filename is tricky to figure
-        # out because wheels mangle the version in certain ways.  Replicate
-        # some of that mangling here.
-        pip install dist/Nevow-"$(python setup.py --version | tr - _)"-py27-none-any.whl
-
-        # Also install the extra documentation requirements.  Unfortunately, it
-        # seems pip doesn't automatically handle that case when installing from
-        # a built file.
-        pip install Sphinx
-
-    elif [ "${MODE}" == "sdist" ]; then
-        # Build and install a normal source distribution
-        python setup.py sdist
-        pip install dist/Nevow-"$(python setup.py --version)".tar.gz
-
-        # Also install the extra documentation requirements.  Unfortunately, it
-        # seems pip doesn't automatically handle that case when installing from
-        # a built file.
-        pip install Sphinx
-
-    elif [ "${MODE}" == "inplace" ]; then
-        # Don't actually install anything.  Just update the environment to make
-        # the source in the git checkout importable.  Then run the tests
-        # directly against that.  This is kind of a "control" case.  These
-        # results should be very similar to the results for any of the
-        # installation cases.
-        # Note that we also install the documentation requirements.
-
-        pip install --editable '.[doc]'
-
-    elif [ "${MODE}" == "source" ]; then
-
-        # Install directly from the git checkout.
-        pip install '.'
-
-        # Also install the extra documentation requirements.  Unfortunately, it
-        # seems this can't be specified to the install command above.
-        pip install Sphinx
-
-    fi
+  - python setup.py --version
+  - pip install tox
 
 script:
-  - "trial formless nevow"
-  - "cd doc; make html"
+    - tox -e $TOX_ENV
